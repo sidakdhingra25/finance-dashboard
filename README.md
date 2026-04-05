@@ -4,6 +4,8 @@ Full-stack finance dashboard: **Express** + **Drizzle ORM** + **PostgreSQL** bac
 
 This README focuses on **backend setup**, **every HTTP route**, and how the server aligns with typical **assignment evaluation** themes (design, logic, functionality, data modeling, validation, documentation, and thoughtful extras). Payloads, status codes, and examples are in **[`server/API.md`](server/API.md)**.
 
+**Postman:** Import **[`postman/Finance-Dashboard.postman_collection.json`](postman/Finance-Dashboard.postman_collection.json)** (Collection v2.1). The collection **pre-request script** adds `Authorization: Bearer {{token}}` for protected routes (skips public auth routes, **no-auth** tests, and uses **`viewerToken`** for the viewer **403** example). Run **02 Auth → Login (admin)** then **Login (viewer)** before folder **06**. Set **`viewerUserId`** from **Users → List** for PATCH status. Regenerate with `node postman/generate-collection.mjs` inside `postman/`.
+
 ---
 
 ## Prerequisites
@@ -55,6 +57,45 @@ Open `http://localhost:5173`.
 | **`src/app.js`** | Express app: CORS, JSON, rate limits, route mounts, health check, error handler last. |
 
 **Flow:** Route → (optional) `validate` → `authMiddleware` → (optional) `requireRoles` → controller → service → DB → JSON response or `next(err)` → `errorHandler`.
+
+## Rate limiting
+
+To reduce abuse and brute-force pressure on authentication, limits are applied with **`express-rate-limit`** (see `server/src/middleware/rateLimiter.js`):
+
+- **`/api/*`** (all API routes, including health) → **100 requests / 15 minutes** per client
+- **`/api/auth/*`** → **20 requests / 15 minutes** per client (stricter; runs in addition to the general `/api` limiter for auth paths)
+
+When exceeded, the API responds with **HTTP 429 Too Many Requests** and a short JSON error message (`formatError`).
+
+## Security
+
+- Passwords are hashed with **bcrypt** (via the **`bcryptjs`** library) before storage; **plain text passwords are never stored**
+- **JWT** is used for stateless authentication (`Authorization: Bearer <token>`)
+- **RBAC** is enforced in middleware after JWT verification (see route tables below)
+
+## Data integrity
+
+- **Transactions** use **soft delete** (`isDeleted`); `DELETE` sets the flag instead of removing the row
+- Soft-deleted rows are **excluded from list, get, and dashboard aggregations** so clients never see them as active data
+- Supports safer operations and leaves room for future recovery or audit extensions
+
+## Validation
+
+- Request bodies (and relevant params) are validated with **Zod** schemas in `server/src/validators/` and the **`validate`** middleware
+- Invalid input returns **HTTP 400** with structured error detail (via the global **`errorHandler`**), so bad data does not reach service logic
+
+## CORS
+
+- CORS is configured in **`server/src/app.js`** with the **`CLIENT_URL`** environment variable as the allowed **`origin`**
+- In production, set **`CLIENT_URL`** to your deployed frontend origin (e.g. your Vercel URL) so only that site can call the API from the browser
+- If **`CLIENT_URL`** is unset, the app falls back to **`origin: *`** (convenient for local demos; avoid in production without understanding the tradeoff)
+
+## Design decisions
+
+- **Service layer** holds business rules and DB access; **controllers** stay thin (HTTP mapping, status codes, `next(err)`)
+- **Middleware** owns cross-cutting concerns: JWT auth, role checks, Zod validation, and rate limits
+- **First registered user becomes `admin`** so a fresh database can be bootstrapped without a separate seed step; later self-registrations default to **`viewer`**
+- **PostgreSQL `numeric` fields** (e.g. amounts, aggregates) are normalized to **JavaScript numbers** in the service layer where responses are built, avoiding stringly-typed money values in JSON
 
 ---
 

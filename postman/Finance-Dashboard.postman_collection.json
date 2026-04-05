@@ -1,0 +1,529 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Finance Dashboard API",
+    "description": "Aligned with `server/API.md`. Includes authentication flow, RBAC validation, error scenarios, and end-to-end API testing.\n\n**Variables:** `baseUrl`, `token`, `viewerToken`, `userId`, `viewerUserId`, `transactionId`.\n\n1. **02 Auth → Login** sets `token` / `userId`. **Login (viewer)** sets `viewerToken` (needed for **06** RBAC test).\n2. **Users → List** — paste a viewer id into **`viewerUserId`** for PATCH status.\n3. **Transactions → POST Create** sets `transactionId` for GET/PUT/DELETE.\n\nCollection **pre-request script** attaches `Authorization: Bearer <token>` automatically (except public routes, no-auth tests, and viewer-403 test). Register may return 400 if emails already exist.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "const url = (pm.request.url && pm.request.url.toString)",
+          "  ? pm.request.url.toString()",
+          "  : String(pm.request.url || \"\");",
+          "const name = pm.info.requestName || \"\";",
+          "",
+          "// Public endpoints — never attach JWT",
+          "if (",
+          "  url.indexOf(\"/api/health\") !== -1 ||",
+          "  url.indexOf(\"/api/auth/register\") !== -1 ||",
+          "  url.indexOf(\"/api/auth/login\") !== -1",
+          ") {",
+          "  return;",
+          "}",
+          "",
+          "// Missing-auth negative test (expect 401)",
+          "if (name.indexOf(\"(expect 401)\") !== -1 || name.indexOf(\"no Authorization\") !== -1) {",
+          "  pm.request.headers.remove(\"Authorization\");",
+          "  return;",
+          "}",
+          "",
+          "// RBAC: viewer must not create transactions (expect 403)",
+          "if (name.indexOf(\"viewer (expect 403)\") !== -1) {",
+          "  const vt = pm.collectionVariables.get(\"viewerToken\");",
+          "  if (vt) {",
+          "    pm.request.headers.upsert({",
+          "      key: \"Authorization\",",
+          "      value: \"Bearer \" + vt,",
+          "    });",
+          "  } else {",
+          "    pm.request.headers.remove(\"Authorization\");",
+          "  }",
+          "  return;",
+          "}",
+          "",
+          "// Default: admin/session token for all other protected routes",
+          "const t = pm.collectionVariables.get(\"token\");",
+          "if (t) {",
+          "  pm.request.headers.upsert({",
+          "    key: \"Authorization\",",
+          "    value: \"Bearer \" + t,",
+          "  });",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://finance-dashboard-api-vwow.onrender.com"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "viewerToken",
+      "value": "",
+      "description": "Set by **Login (viewer)**. Used for viewer → 403 RBAC test."
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "description": "Set by Login (logged-in user). Used for GET user by id / PUT."
+    },
+    {
+      "key": "viewerUserId",
+      "value": "",
+      "description": "Paste a viewer user's id from **List users** before PATCH status (avoid deactivating your admin)."
+    },
+    {
+      "key": "transactionId",
+      "value": "",
+      "description": "Set by **Transactions → POST Create**."
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Health",
+      "item": [
+        {
+          "name": "GET /api/health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Auth",
+      "item": [
+        {
+          "name": "POST Register (first user → admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin User\",\n  \"email\": \"admin@test.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST Register (second user → viewer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Viewer User\",\n  \"email\": \"viewer@test.com\",\n  \"password\": \"viewer123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST Login (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "try {",
+                  "  const j = pm.response.json();",
+                  "  if (j && j.success && j.data && j.data.token) {",
+                  "    pm.collectionVariables.set(\"token\", j.data.token);",
+                  "  }",
+                  "  if (j && j.data && j.data.user && j.data.user.id) {",
+                  "    pm.collectionVariables.set(\"userId\", j.data.user.id);",
+                  "  }",
+                  "} catch (e) {}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Login (viewer — saves viewerToken)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"viewer@test.com\",\n  \"password\": \"viewer123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "try {",
+                  "  const j = pm.response.json();",
+                  "  if (j && j.success && j.data && j.data.token) {",
+                  "    pm.collectionVariables.set(\"viewerToken\", j.data.token);",
+                  "  }",
+                  "} catch (e) {}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Users (admin only)",
+      "item": [
+        {
+          "name": "GET List users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "GET User by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/users/{{userId}}"
+          }
+        },
+        {
+          "name": "POST Create user (analyst)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Analyst User\",\n  \"email\": \"analyst@test.com\",\n  \"password\": \"analyst123\",\n  \"role\": \"analyst\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PUT Update user",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{userId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"role\": \"analyst\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH User status (inactive) — uses viewerUserId",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{viewerUserId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"inactive\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH User status (active) — uses viewerUserId",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{viewerUserId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"active\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Transactions",
+      "item": [
+        {
+          "name": "GET List (all)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/transactions"
+          }
+        },
+        {
+          "name": "GET List (filters + pagination)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/transactions?type=income&category=salary&from=2024-03-01&to=2024-12-31&page=1&limit=10"
+          }
+        },
+        {
+          "name": "POST Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/transactions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5000,\n  \"type\": \"income\",\n  \"category\": \"salary\",\n  \"date\": \"2024-03-01\",\n  \"notes\": \"March salary\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "try {",
+                  "  const j = pm.response.json();",
+                  "  if (j && j.success && j.data && j.data.id) {",
+                  "    pm.collectionVariables.set(\"transactionId\", j.data.id);",
+                  "  }",
+                  "} catch (e) {}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST Create (expense sample)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/transactions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1200,\n  \"type\": \"expense\",\n  \"category\": \"rent\",\n  \"date\": \"2024-03-05\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET By id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/transactions/{{transactionId}}"
+          }
+        },
+        {
+          "name": "PUT Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/transactions/{{transactionId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5500,\n  \"notes\": \"Updated salary\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE Soft delete",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/transactions/{{transactionId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Dashboard",
+      "item": [
+        {
+          "name": "GET Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/dashboard/summary"
+          }
+        },
+        {
+          "name": "GET Trends (month, default)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/dashboard/trends"
+          }
+        },
+        {
+          "name": "GET Trends (week)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/dashboard/trends?granularity=week"
+          }
+        },
+        {
+          "name": "GET Recent",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/dashboard/recent"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Error & security examples",
+      "item": [
+        {
+          "name": "POST Login — wrong password (expect 401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.com\",\n  \"password\": \"wrongpass\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST Create transaction — invalid body (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/transactions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": -100,\n  \"type\": \"income\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET Me — no Authorization (expect 401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "POST /api/transactions — viewer (expect 403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/transactions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100,\n  \"type\": \"income\",\n  \"category\": \"test\",\n  \"date\": \"2024-06-01\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
