@@ -55,10 +55,12 @@ The health route returns a plain object **without** `success` / `data` (see belo
 
 ## Rate limiting
 
-| Scope | Window | Limit | HTTP when exceeded |
-|-------|--------|-------|---------------------|
-| All `/api/*` | 15 minutes | 100 requests | `429` |
-| `/api/auth/*` | 15 minutes | 20 requests | `429` |
+
+| Scope         | Window     | Limit        | HTTP when exceeded |
+| ------------- | ---------- | ------------ | ------------------ |
+| All `/api/`*  | 15 minutes | 100 requests | `429`              |
+| `/api/auth/*` | 15 minutes | 20 requests  | `429`              |
+
 
 Requests under `/api/auth/*` match **both** scopes; each limiter tracks separately for the same client.
 
@@ -99,11 +101,13 @@ Requests under `/api/auth/*` match **both** scopes; each limiter tracks separate
 
 **Request body**
 
-| Field | Type | Rules |
-|-------|------|--------|
-| `name` | string | Required, min length 1 |
-| `email` | string | Valid email format |
-| `password` | string | Min length 6 |
+
+| Field      | Type   | Rules                  |
+| ---------- | ------ | ---------------------- |
+| `name`     | string | Required, min length 1 |
+| `email`    | string | Valid email format     |
+| `password` | string | Min length 6           |
+
 
 **Example — first user (becomes admin)**
 
@@ -218,10 +222,12 @@ Response `400 Bad Request`:
 
 **Request body**
 
-| Field | Type | Rules |
-|-------|------|--------|
-| `email` | string | Valid email format |
+
+| Field      | Type   | Rules                   |
+| ---------- | ------ | ----------------------- |
+| `email`    | string | Valid email format      |
 | `password` | string | Required (min length 1) |
+
 
 **Example — success**
 
@@ -527,12 +533,14 @@ Content-Type: application/json
 
 **Request body**
 
-| Field | Type | Rules |
-|-------|------|--------|
-| `name` | string | Required, min length 1 |
-| `email` | string | Valid email |
-| `password` | string | Min length 6 |
-| `role` | string | `viewer` \| `analyst` \| `admin` |
+
+| Field      | Type   | Rules                          |
+| ---------- | ------ | ------------------------------ |
+| `name`     | string | Required, min length 1         |
+| `email`    | string | Valid email                    |
+| `password` | string | Min length 6                   |
+| `role`     | string | `viewer` | `analyst` | `admin` |
+
 
 **Example — create analyst**
 
@@ -601,10 +609,12 @@ Content-Type: application/json
 
 **Request body** — at least one of `name` or `role` must be present after validation. Sending neither (e.g. `{}`) returns `400`.
 
-| Field | Type | Rules |
-|-------|------|--------|
-| `name` | string | Optional; if present, min length 1 |
-| `role` | string | Optional; `viewer` \| `analyst` \| `admin` |
+
+| Field  | Type   | Rules                                    |
+| ------ | ------ | ---------------------------------------- |
+| `name` | string | Optional; if present, min length 1       |
+| `role` | string | Optional; `viewer` | `analyst` | `admin` |
+
 
 **Example — success**
 
@@ -662,9 +672,11 @@ Content-Type: application/json
 
 **Request body**
 
-| Field | Type | Rules |
-|-------|------|--------|
+
+| Field    | Type   | Rules                  |
+| -------- | ------ | ---------------------- |
 | `status` | string | `active` or `inactive` |
+
 
 **Example — deactivate**
 
@@ -711,10 +723,12 @@ Response `400 Bad Request` with `"Validation failed"` and `errors` (invalid stat
 
 **Auth:** JWT required on every route.
 
-| Capability | Roles |
-|------------|--------|
-| `GET /`, `GET /:id` | `admin`, `analyst`, `viewer` |
-| `POST /`, `PATCH /:id`, `DELETE /:id` | `admin` only |
+
+| Capability                            | Roles                        |
+| ------------------------------------- | ---------------------------- |
+| `GET /`, `GET /:id`                   | `admin`, `analyst`, `viewer` |
+| `POST /`, `PATCH /:id`, `DELETE /:id` | `admin` only                 |
+
 
 Non-admin write attempts receive `403`:
 
@@ -727,7 +741,7 @@ Non-admin write attempts receive `403`:
 
 Soft-deleted rows (`isDeleted: true`) are hidden from list/get and cannot be updated again via these endpoints.
 
-**`amount`** is always returned as a **number** in JSON (not a string), even though PostgreSQL stores it as `numeric`.
+`**amount**` is always returned as a **number** in JSON (not a string), even though PostgreSQL stores it as `numeric`.
 
 `createdBy` is set **only** from the JWT on create; the client must not rely on sending it (it is ignored if sent — the server overwrites with `req.user.id`).
 
@@ -739,14 +753,16 @@ Soft-deleted rows (`isDeleted: true`) are hidden from list/get and cannot be upd
 
 **Query parameters (all optional)**
 
-| Param | Example | Effect |
-|-------|---------|--------|
-| `type` | `income` | Filter by `income` or `expense` |
-| `category` | `rent` | Exact category match |
-| `from` | `2024-03-01` | Inclusive lower bound on `date` |
-| `to` | `2024-03-31` | Inclusive upper bound on `date` |
-| `page` | `1` | Page number (default `1`) |
-| `limit` | `10` | Page size (default `10`) |
+
+| Param      | Example      | Effect                          |
+| ---------- | ------------ | ------------------------------- |
+| `type`     | `income`     | Filter by `income` or `expense` |
+| `category` | `rent`       | Exact category match            |
+| `from`     | `2024-03-01` | Inclusive lower bound on `date` |
+| `to`       | `2024-03-31` | Inclusive upper bound on `date` |
+| `page`     | `1`          | Page number (default `1`)       |
+| `limit`    | `10`         | Page size (default `10`)        |
+
 
 **Response** `200 OK`
 
@@ -804,13 +820,15 @@ Response `404 Not Found`:
 
 **Request body**
 
-| Field | Type | Rules |
-|-------|------|--------|
-| `amount` | number | Must be positive |
-| `type` | string | `income` or `expense` |
-| `category` | string | Required, min length 1 |
-| `date` | string | Parseable date (e.g. `2024-03-01`) |
-| `notes` | string | Optional |
+
+| Field      | Type   | Rules                              |
+| ---------- | ------ | ---------------------------------- |
+| `amount`   | number | Must be positive                   |
+| `type`     | string | `income` or `expense`              |
+| `category` | string | Required, min length 1             |
+| `date`     | string | Parseable date (e.g. `2024-03-01`) |
+| `notes`    | string | Optional                           |
+
 
 **Example**
 
@@ -871,13 +889,15 @@ Response `403 Forbidden` — same shape as other RBAC denials.
 
 **Request body** — send only fields to change. At least one of the fields below must be present; `{}` returns `400` `"No fields to update"` (no DB write).
 
-| Field | Type | Rules |
-|-------|------|--------|
-| `amount` | number | If present, must be positive |
-| `type` | string | `income` or `expense` |
-| `category` | string | If present, min length 1 |
-| `date` | string | If present, must parse |
-| `notes` | string | Optional |
+
+| Field      | Type   | Rules                        |
+| ---------- | ------ | ---------------------------- |
+| `amount`   | number | If present, must be positive |
+| `type`     | string | `income` or `expense`        |
+| `category` | string | If present, min length 1     |
+| `date`     | string | If present, must parse       |
+| `notes`    | string | Optional                     |
+
 
 **Example**
 
@@ -936,7 +956,7 @@ After delete, `GET /api/transactions/:id` returns `404`.
 
 ## Dashboard (`/api/dashboard`)
 
-Aggregations use only rows where **`isDeleted` is false** (same as list/get transactions). Soft-deleted rows are excluded from **summary**, **trends**, and **recent**.
+Aggregations use only rows where `**isDeleted` is false** (same as list/get transactions). Soft-deleted rows are excluded from **summary**, **trends**, and **recent**.
 
 ---
 
@@ -993,12 +1013,14 @@ Response `401 Unauthorized` (same shape as other protected routes).
 
 **Query parameters**
 
-| Param | Values | Default |
-|-------|--------|--------|
+
+| Param         | Values          | Default |
+| ------------- | --------------- | ------- |
 | `granularity` | `month`, `week` | `month` |
 
-- **`month`** — `period` is **`YYYY-MM`** (calendar month of `transactions.date`).
-- **`week`** — `period` is the **Monday** of the week containing `transactions.date`, formatted **`YYYY-MM-DD`**, using PostgreSQL `date_trunc('week', ...)`.
+
+- `**month`** — `period` is `**YYYY-MM**` (calendar month of `transactions.date`).
+- `**week**` — `period` is the **Monday** of the week containing `transactions.date`, formatted `**YYYY-MM-DD`**, using PostgreSQL `date_trunc('week', ...)`.
 
 **Response** `200 OK`
 
@@ -1054,7 +1076,7 @@ Response `400 Bad Request`:
 
 **Headers:** `Authorization: Bearer <token>`
 
-**Description:** Up to **5** most recent non-deleted transactions, **`createdAt` descending** (newest first). Each `amount` is a **number**.
+**Description:** Up to **5** most recent non-deleted transactions, `**createdAt` descending** (newest first). Each `amount` is a **number**.
 
 **Response** `200 OK`
 
@@ -1084,33 +1106,36 @@ If there are fewer than five transactions, `data` contains only those rows (poss
 
 ## Testing checklist (quick reference)
 
-| Step | Method & path | Notes |
-|------|----------------|--------|
-| 1 | `GET /api/health` | Expect `{ "status": "OK" }` |
-| 2 | `POST /api/auth/register` | First user → `role: admin` |
-| 3 | `POST /api/auth/register` | Second email → `role: viewer` |
-| 4 | `POST /api/auth/register` | Duplicate email → `400` |
-| 5 | `POST /api/auth/login` | Valid credentials → `token` + `user` |
-| 6 | `POST /api/auth/login` | Wrong password → `401` |
-| 7 | `POST /api/auth/login` | Unknown email → `404` |
-| 8 | `GET /api/auth/me` | Bearer admin token → `200` |
-| 9 | `GET /api/auth/me` | No / bad token → `401` |
-| 10 | `GET /api/users` | Admin token → `200` array |
-| 11 | `GET /api/users` | Viewer token → `403` Access denied |
-| 12 | `POST /api/users` | Admin creates analyst → `201` |
-| 13 | `PATCH /api/users/:id/status` | `inactive` → then login that user → `403` inactive |
-| 14 | `POST /api/transactions` | Admin → `201`, `amount` number, `createdBy` = your user id |
-| 15 | `GET /api/transactions?type=income` | Filter smoke test |
-| 16 | `GET /api/transactions?from=...&to=...` | Date range |
-| 17 | `GET /api/transactions?page=1&limit=2` | `meta.total` matches non-deleted rows |
-| 18 | `PATCH /api/transactions/:id` | Admin updates fields |
-| 19 | `DELETE /api/transactions/:id` | Then `GET` same id → `404` |
-| 20 | `POST /api/transactions` | Viewer token → `403` |
-| 21 | `GET /api/dashboard/summary` | Admin/analyst → totals + `byCategory` |
-| 22 | `GET /api/dashboard/trends` | `granularity=month` → series by `YYYY-MM` |
-| 23 | `GET /api/dashboard/trends?granularity=week` | Series by week (Monday key) |
-| 24 | `GET /api/dashboard/trends?granularity=bad` | `400` invalid granularity |
-| 25 | `GET /api/dashboard/summary` | Viewer token → `403` |
-| 26 | `GET /api/dashboard/recent` | Any role → ≤5 rows, newest first |
-| 27 | After `DELETE` a transaction | `/summary`, `/trends`, `/recent` exclude it |
-| 28 | (Optional) | Many rapid `/api/auth` calls → `429` |
+
+| Step | Method & path                                | Notes                                                      |
+| ---- | -------------------------------------------- | ---------------------------------------------------------- |
+| 1    | `GET /api/health`                            | Expect `{ "status": "OK" }`                                |
+| 2    | `POST /api/auth/register`                    | First user → `role: admin`                                 |
+| 3    | `POST /api/auth/register`                    | Second email → `role: viewer`                              |
+| 4    | `POST /api/auth/register`                    | Duplicate email → `400`                                    |
+| 5    | `POST /api/auth/login`                       | Valid credentials → `token` + `user`                       |
+| 6    | `POST /api/auth/login`                       | Wrong password → `401`                                     |
+| 7    | `POST /api/auth/login`                       | Unknown email → `404`                                      |
+| 8    | `GET /api/auth/me`                           | Bearer admin token → `200`                                 |
+| 9    | `GET /api/auth/me`                           | No / bad token → `401`                                     |
+| 10   | `GET /api/users`                             | Admin token → `200` array                                  |
+| 11   | `GET /api/users`                             | Viewer token → `403` Access denied                         |
+| 12   | `POST /api/users`                            | Admin creates analyst → `201`                              |
+| 13   | `PATCH /api/users/:id/status`                | `inactive` → then login that user → `403` inactive         |
+| 14   | `POST /api/transactions`                     | Admin → `201`, `amount` number, `createdBy` = your user id |
+| 15   | `GET /api/transactions?type=income`          | Filter smoke test                                          |
+| 16   | `GET /api/transactions?from=...&to=...`      | Date range                                                 |
+| 17   | `GET /api/transactions?page=1&limit=2`       | `meta.total` matches non-deleted rows                      |
+| 18   | `PATCH /api/transactions/:id`                | Admin updates fields                                       |
+| 19   | `DELETE /api/transactions/:id`               | Then `GET` same id → `404`                                 |
+| 20   | `POST /api/transactions`                     | Viewer token → `403`                                       |
+| 21   | `GET /api/dashboard/summary`                 | Admin/analyst → totals + `byCategory`                      |
+| 22   | `GET /api/dashboard/trends`                  | `granularity=month` → series by `YYYY-MM`                  |
+| 23   | `GET /api/dashboard/trends?granularity=week` | Series by week (Monday key)                                |
+| 24   | `GET /api/dashboard/trends?granularity=bad`  | `400` invalid granularity                                  |
+| 25   | `GET /api/dashboard/summary`                 | Viewer token → `403`                                       |
+| 26   | `GET /api/dashboard/recent`                  | Any role → ≤5 rows, newest first                           |
+| 27   | After `DELETE` a transaction                 | `/summary`, `/trends`, `/recent` exclude it                |
+| 28   | Rate limiting                                | Many rapid `/api/auth` calls → `429`                       |
+
+
