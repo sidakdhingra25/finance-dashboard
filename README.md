@@ -47,7 +47,7 @@ Open `http://localhost:5173`.
 | Layer | Role |
 |-------|------|
 | **`src/config/`** | Central `ENV` and `db` (Drizzle + `pg` pool, SSL for hosted Postgres). |
-| **`src/db/schema.js`** | Tables and enums: `users`, `transactions`, `audit_logs` (see note below). |
+| **`src/db/schema.js`** | Tables and enums: `users`, `transactions`. |
 | **`src/routes/`** | HTTP path registration only; chains middleware + controller handlers. |
 | **`src/controllers/`** | Request/response handling, status codes, delegates to services, `next(err)`. |
 | **`src/services/`** | Business logic, queries, aggregations, rules (e.g. first user = admin, soft delete). |
@@ -77,7 +77,7 @@ When exceeded, the API responds with **HTTP 429 Too Many Requests** and a short 
 
 - **Transactions** use **soft delete** (`isDeleted`); `DELETE` sets the flag instead of removing the row
 - Soft-deleted rows are **excluded from list, get, and dashboard aggregations** so clients never see them as active data
-- Supports safer operations and leaves room for future recovery or audit extensions
+- Supports safer operations and leaves room for future recovery if needed
 
 ## Validation
 
@@ -119,7 +119,7 @@ Base path: **`/api`**. Unless noted, JSON bodies require **`Content-Type: applic
 | `GET` | `/api/users` | `admin` | List users (no passwords). |
 | `GET` | `/api/users/:id` | `admin` | Single user. |
 | `POST` | `/api/users` | `admin` | Create user with chosen role. |
-| `PUT` | `/api/users/:id` | `admin` | Update name/role; `{}` → `400` “No fields to update”. |
+| `PATCH` | `/api/users/:id` | `admin` | Partial update (name/role); `{}` → `400` “No fields to update”. |
 | `PATCH` | `/api/users/:id/status` | `admin` | Set `active` / `inactive`. |
 
 ### Transactions
@@ -129,7 +129,7 @@ Base path: **`/api`**. Unless noted, JSON bodies require **`Content-Type: applic
 | `GET` | `/api/transactions` | `admin`, `analyst`, `viewer` | List with optional **`type`**, **`category`**, **`from`**, **`to`**, **`page`**, **`limit`**; excludes soft-deleted; `meta` for pagination. |
 | `GET` | `/api/transactions/:id` | `admin`, `analyst`, `viewer` | Single transaction (not soft-deleted). |
 | `POST` | `/api/transactions` | `admin` | Create; **`createdBy`** set from JWT, not client. |
-| `PUT` | `/api/transactions/:id` | `admin` | Partial update; empty patch → `400` “No fields to update”. |
+| `PATCH` | `/api/transactions/:id` | `admin` | Partial update; empty body → `400` “No fields to update”. |
 | `DELETE` | `/api/transactions/:id` | `admin` | Soft delete (`isDeleted`); subsequent get/list omit row. |
 
 ### Dashboard
@@ -148,7 +148,7 @@ Base path: **`/api`**. Unless noted, JSON bodies require **`Content-Type: applic
 
 - **Viewer** vs **insights:** Viewers see **transactions** and **recent** but not **summary/trends** so “dashboard insight” endpoints are clearly tied to **analyst/admin**.
 - **Registration:** Self-serve register is suitable for demos; production systems often disable open registration.
-- **Not implemented (optional scope):** fuzzy **search** on transactions, **automated tests**, rich **charting** on the client, and **audit log** writes.
+- **Not implemented (optional scope):** fuzzy **search** on transactions, **automated tests**, rich **charting** on the client.
 - **Study-plan docs:** If an external plan lists “monthly trends” as skipped, **this repo includes** `GET /api/dashboard/trends` — trust **this README** and **`API.md`**.
 
 ---

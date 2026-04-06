@@ -21,7 +21,7 @@ const router = Router()
 router.get("/", authMiddleware, requireRoles(ROLES.ADMIN), getAllUsers)
 router.get("/:id", authMiddleware, requireRoles(ROLES.ADMIN), getUserById)
 router.post("/", authMiddleware, requireRoles(ROLES.ADMIN), validate(createUserSchema), createUser)
-router.put("/:id", authMiddleware, requireRoles(ROLES.ADMIN), validate(updateUserSchema), updateUser)
+router.patch("/:id", authMiddleware, requireRoles(ROLES.ADMIN), validate(updateUserSchema), updateUser)
 router.patch("/:id/status", authMiddleware, requireRoles(ROLES.ADMIN), validate(updateStatusSchema), updateStatus)
 
 export default router

@@ -28,7 +28,7 @@ router.post(
   validate(createTransactionSchema),
   createTransaction
 )
-router.put(
+router.patch(
   "/:id",
   authMiddleware,
   requireRoles(ROLES.ADMIN),

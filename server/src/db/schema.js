@@ -29,13 +29,3 @@ export const transactions = pgTable("transactions", {
   createdAt:  timestamp("created_at").defaultNow(),
   updatedAt:  timestamp("updated_at").defaultNow()
 })
-
-// ─── Audit Logs ───────────────────────────────────────
-export const auditLogs = pgTable("audit_logs", {
-  id:         uuid("id").defaultRandom().primaryKey(),
-  userId:     uuid("user_id").references(() => users.id),
-  action:     varchar("action", { length: 50 }).notNull(),
-  entity:     varchar("entity", { length: 50 }).notNull(),
-  entityId:   uuid("entity_id"),
-  createdAt:  timestamp("created_at").defaultNow()
-})

@@ -123,7 +123,7 @@ const collection = {
     _postman_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     name: "Finance Dashboard API",
     description:
-      "Aligned with `server/API.md`. Includes authentication flow, RBAC validation, error scenarios, and end-to-end API testing.\n\n**Variables:** `baseUrl`, `token`, `viewerToken`, `userId`, `viewerUserId`, `transactionId`.\n\n1. **02 Auth → Login** sets `token` / `userId`. **Login (viewer)** sets `viewerToken` (needed for **06** RBAC test).\n2. **Users → List** — paste a viewer id into **`viewerUserId`** for PATCH status.\n3. **Transactions → POST Create** sets `transactionId` for GET/PUT/DELETE.\n\nCollection **pre-request script** attaches `Authorization: Bearer <token>` automatically (except public routes, no-auth tests, and viewer-403 test). Register may return 400 if emails already exist.",
+      "Aligned with `server/API.md`. Includes authentication flow, RBAC validation, error scenarios, and end-to-end API testing.\n\n**Variables:** `baseUrl`, `token`, `viewerToken`, `userId`, `viewerUserId`, `transactionId`.\n\n1. **02 Auth → Login** sets `token` / `userId`. **Login (viewer)** sets `viewerToken` (needed for **06** RBAC test).\n2. **Users → List** — paste a viewer id into **`viewerUserId`** for PATCH status.\n3. **Transactions → POST Create** sets `transactionId` for GET/PATCH/DELETE.\n\nCollection **pre-request script** attaches `Authorization: Bearer <token>` automatically (except public routes, no-auth tests, and viewer-403 test). Register may return 400 if emails already exist.",
     schema:
       "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
   },
@@ -150,7 +150,7 @@ const collection = {
     {
       key: "userId",
       value: "",
-      description: "Set by Login (logged-in user). Used for GET user by id / PUT.",
+      description: "Set by Login (logged-in user). Used for GET user by id / PATCH.",
     },
     {
       key: "viewerUserId",
@@ -210,7 +210,7 @@ const collection = {
             role: "analyst",
           },
         }),
-        req("PUT Update user", "PUT", "/api/users/{{userId}}", {
+        req("PATCH Update user", "PATCH", "/api/users/{{userId}}", {
           body: { name: "Updated Name", role: "analyst" },
         }),
         req(
@@ -259,7 +259,7 @@ const collection = {
           },
         }),
         req("GET By id", "GET", "/api/transactions/{{transactionId}}"),
-        req("PUT Update", "PUT", "/api/transactions/{{transactionId}}", {
+        req("PATCH Update", "PATCH", "/api/transactions/{{transactionId}}", {
           body: { amount: 5500, notes: "Updated salary" },
         }),
         req("DELETE Soft delete", "DELETE", "/api/transactions/{{transactionId}}"),

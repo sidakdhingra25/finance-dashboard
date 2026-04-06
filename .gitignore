@@ -50,12 +50,6 @@ server/node_modules
 server/dist
 server/build
 server/logs
-server/npm-debug.log*
-server/yarn-debug.log*
-server/yarn-error.log*
-server/pnpm-debug.log*
-server/lerna-debug.log*
-server/API.md
 
 # Drizzle (optional local artifacts; keep tracked: drizzle/*.sql if you use migrations)
 # Uncomment if you generate local SQL you do not want committed:
