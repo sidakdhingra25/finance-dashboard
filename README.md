@@ -2,7 +2,18 @@
 
 Backend API for a finance dashboard: **Express** + **Drizzle ORM** + **PostgreSQL**. **JWT** authentication and **role-based access** (`viewer`, `analyst`, `admin`). This repository documents and ships the **REST API only** (no frontend app in scope).
 
-**Postman:** Import `**[postman/Finance-Dashboard.postman_collection.json](postman/Finance-Dashboard.postman_collection.json)`**.
+**Postman:** Import **[`postman/Finance-Dashboard.postman_collection.json`](postman/Finance-Dashboard.postman_collection.json)**. Full payloads and status codes are in **[`server/API.md`](server/API.md)**.
+
+### Demo admin
+
+Use these to log in as **`admin`** with **`POST /api/auth/login`** once that user exists (e.g. on a seeded or shared demo database):
+
+| Field | Value |
+|-------|--------|
+| **Email** | `admin@test.com` |
+| **Password** | `admin123` |
+
+On an **empty** database, the **first** `POST /api/auth/register` becomes `admin`.
 
 ---
 
@@ -25,6 +36,14 @@ npm run dev
 ```
 
 Server listens on `PORT` (default **5000**).
+
+**Drizzle Studio:** With `DATABASE_URL` set in `.env`, you can open a local UI to inspect tables and data:
+
+```bash
+npx drizzle-kit studio
+```
+
+Run this from the `server/` directory (same place as `drizzle.config.js`). It uses your configured Postgres connection.
 
 ---
 
@@ -164,5 +183,6 @@ Base path: `**/api`**. Unless noted, JSON bodies require `**Content-Type: applic
 | `npm start`           | Production `node src/app.js`        |
 | `npm run db:push`     | Push Drizzle schema to the database |
 | `npm run db:generate` | Generate Drizzle migrations         |
+| `npx drizzle-kit studio` | Open Drizzle Studio (browse DB; run from `server/` with `DATABASE_URL` set) |
 
 
