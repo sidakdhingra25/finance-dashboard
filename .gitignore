@@ -1,5 +1,6 @@
 # Dependencies (client + server)
 node_modules/
+client/
 
 # Environment — never commit secrets (templates stay tracked)
 .env

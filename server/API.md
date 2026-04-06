@@ -1,5 +1,6 @@
 # Finance Dashboard API
 
+
 Base URL (local): `http://localhost:5000`  
 (Or set `PORT` in `.env`; default is `5000`.)
 
@@ -743,7 +744,7 @@ Soft-deleted rows (`isDeleted: true`) are hidden from list/get and cannot be upd
 
 `**amount**` is always returned as a **number** in JSON (not a string), even though PostgreSQL stores it as `numeric`.
 
-`createdBy` is set **only** from the JWT on create; the client must not rely on sending it (it is ignored if sent — the server overwrites with `req.user.id`).
+`createdBy` is set **only** from the JWT on create; callers must not rely on sending it in the body (it is ignored if sent — the server overwrites with `req.user.id`).
 
 ---
 
