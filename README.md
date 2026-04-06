@@ -2,8 +2,6 @@
 
 Backend API for a finance dashboard: **Express** + **Drizzle ORM** + **PostgreSQL**. **JWT** authentication and **role-based access** (`viewer`, `analyst`, `admin`). This repository documents and ships the **REST API only** (no frontend app in scope).
 
-This README covers **backend setup**, **every HTTP route**, and how the server aligns with typical **assignment evaluation** themes (design, logic, functionality, data modeling, validation, documentation, and thoughtful extras). Payloads, status codes, and examples are in `**[server/API.md](server/API.md)`**.
-
 **Postman:** Import `**[postman/Finance-Dashboard.postman_collection.json](postman/Finance-Dashboard.postman_collection.json)`**.
 
 ---
