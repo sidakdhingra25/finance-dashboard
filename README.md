@@ -2,9 +2,9 @@
 
 Backend API for a finance dashboard: **Express** + **Drizzle ORM** + **PostgreSQL**. **JWT** authentication and **role-based access** (`viewer`, `analyst`, `admin`). This repository documents and ships the **REST API only** (no frontend app in scope).
 
-This README covers **backend setup**, **every HTTP route**, and how the server aligns with typical **assignment evaluation** themes (design, logic, functionality, data modeling, validation, documentation, and thoughtful extras). Payloads, status codes, and examples are in **[`server/API.md`](server/API.md)**.
+This README covers **backend setup**, **every HTTP route**, and how the server aligns with typical **assignment evaluation** themes (design, logic, functionality, data modeling, validation, documentation, and thoughtful extras). Payloads, status codes, and examples are in `**[server/API.md](server/API.md)`**.
 
-**Postman:** Import **[`postman/Finance-Dashboard.postman_collection.json`](postman/Finance-Dashboard.postman_collection.json)**.
+**Postman:** Import `**[postman/Finance-Dashboard.postman_collection.json](postman/Finance-Dashboard.postman_collection.json)`**.
 
 ---
 
@@ -33,33 +33,33 @@ Server listens on `PORT` (default **5000**).
 ## Backend architecture
 
 
-| Layer                    | Role                                                                                         |
-| ------------------------ | -------------------------------------------------------------------------------------------- |
-| **`src/config/`**        | Central `ENV` and `db` (Drizzle + `pg` pool, SSL for hosted Postgres).                       |
-| **`src/db/schema.js`**   | Tables and enums: `users`, `transactions`.                                                 |
-| **`src/routes/`**        | HTTP path registration only; chains middleware + controller handlers.                      |
-| **`src/controllers/`**   | Request/response handling, status codes, delegates to services, `next(err)`.                 |
-| **`src/services/`**      | Business logic, queries, aggregations, rules (e.g. first user = admin, soft delete).         |
-| **`src/middleware/`**    | `auth` (JWT), `rbac` (`requireRoles`), `validate` (Zod), rate limits, global `errorHandler`. |
-| **`src/validators/`**    | Zod schemas for bodies.                                                                      |
-| **`src/utils/`**         | Shared helpers: `formatSuccess` / `formatError`, JWT sign, role/status constants.            |
-| **`src/app.js`**         | Express app: CORS, JSON, rate limits, route mounts, health check, error handler last.          |
+| Layer                  | Role                                                                                         |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| `**src/config/`**      | Central `ENV` and `db` (Drizzle + `pg` pool, SSL for hosted Postgres).                       |
+| `**src/db/schema.js**` | Tables and enums: `users`, `transactions`.                                                   |
+| `**src/routes/**`      | HTTP path registration only; chains middleware + controller handlers.                        |
+| `**src/controllers/**` | Request/response handling, status codes, delegates to services, `next(err)`.                 |
+| `**src/services/**`    | Business logic, queries, aggregations, rules (e.g. first user = admin, soft delete).         |
+| `**src/middleware/**`  | `auth` (JWT), `rbac` (`requireRoles`), `validate` (Zod), rate limits, global `errorHandler`. |
+| `**src/validators/**`  | Zod schemas for bodies.                                                                      |
+| `**src/utils/**`       | Shared helpers: `formatSuccess` / `formatError`, JWT sign, role/status constants.            |
+| `**src/app.js**`       | Express app: CORS, JSON, rate limits, route mounts, health check, error handler last.        |
 
 
 **Flow:** Route → (optional) `validate` → `authMiddleware` → (optional) `requireRoles` → controller → service → DB → JSON response or `next(err)` → `errorHandler`.
 
 ## Rate limiting
 
-To reduce abuse and brute-force pressure on authentication, limits are applied with **`express-rate-limit`** (see `server/src/middleware/rateLimiter.js`):
+To reduce abuse and brute-force pressure on authentication, limits are applied with `**express-rate-limit`** (see `server/src/middleware/rateLimiter.js`):
 
-- **`/api/*`** (all API routes, including health) → **100 requests / 15 minutes** per caller
-- **`/api/auth/*`** → **20 requests / 15 minutes** per caller (stricter; runs in addition to the general `/api` limiter for auth paths)
+- `**/api/***` (all API routes, including health) → **100 requests / 15 minutes** per caller
+- `**/api/auth/*`** → **20 requests / 15 minutes** per caller (stricter; runs in addition to the general `/api` limiter for auth paths)
 
 When exceeded, the API responds with **HTTP 429 Too Many Requests** and a short JSON error message (`formatError`).
 
 ## Security
 
-- Passwords are hashed with **bcrypt** (via the **`bcryptjs`** library) before storage; **plain text passwords are never stored**
+- Passwords are hashed with **bcrypt** (via the `**bcryptjs`** library) before storage; **plain text passwords are never stored**
 - **JWT** is used for stateless authentication (`Authorization: Bearer <token>`)
 - **RBAC** is enforced in middleware after JWT verification (see route tables below)
 
@@ -71,27 +71,21 @@ When exceeded, the API responds with **HTTP 429 Too Many Requests** and a short 
 
 ## Validation
 
-- Request bodies (and relevant params) are validated with **Zod** schemas in `server/src/validators/` and the **`validate`** middleware
-- Invalid input returns **HTTP 400** with structured error detail (via the global **`errorHandler`**), so bad data does not reach service logic
-
-## CORS
-
-- CORS is configured in **`server/src/app.js`** with the **`CLIENT_URL`** environment variable as the allowed **`origin`**
-- When you call the API from a **browser** from a known origin, set **`CLIENT_URL`** to that origin (scheme + host). Tools like Postman or curl are not subject to browser CORS rules the same way
-- If **`CLIENT_URL`** is unset, the app falls back to **`origin: *`** (convenient for local API testing; tighten for production if you expose browser-based callers)
+- Request bodies (and relevant params) are validated with **Zod** schemas in `server/src/validators/` and the `**validate`** middleware
+- Invalid input returns **HTTP 400** with structured error detail (via the global `**errorHandler`**), so bad data does not reach service logic
 
 ## Design decisions
 
 - **Service layer** holds business rules and DB access; **controllers** stay thin (HTTP mapping, status codes, `next(err)`)
 - **Middleware** owns cross-cutting concerns: JWT auth, role checks, Zod validation, and rate limits
-- **First registered user becomes `admin`** so a fresh database can be bootstrapped without a separate seed step; later self-registrations default to **`viewer`**
+- **First registered user becomes `admin`** so a fresh database can be bootstrapped without a separate seed step; later self-registrations default to `**viewer**`
 - **PostgreSQL `numeric` fields** (e.g. amounts, aggregates) are normalized to **JavaScript numbers** in the service layer where responses are built, avoiding stringly-typed money values in JSON
 
 ---
 
 ## All API routes
 
-Base path: **`/api`**. Unless noted, JSON bodies require **`Content-Type: application/json`**. Protected routes need **`Authorization: Bearer <token>`**.
+Base path: `**/api`**. Unless noted, JSON bodies require `**Content-Type: application/json**`. Protected routes need `**Authorization: Bearer <token>**`.
 
 ### Health & auth
 
@@ -121,9 +115,9 @@ Base path: **`/api`**. Unless noted, JSON bodies require **`Content-Type: applic
 
 | Method   | Path                    | Roles                        | Description                                                                                                                                 |
 | -------- | ----------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`    | `/api/transactions`     | `admin`, `analyst`, `viewer` | List with optional **`type`**, **`category`**, **`from`**, **`to`**, **`page`**, **`limit`**; excludes soft-deleted; `meta` for pagination. |
+| `GET`    | `/api/transactions`     | `admin`, `analyst`, `viewer` | List with optional `**type**`, `**category**`, `**from**`, `**to**`, `**page**`, `**limit**`; excludes soft-deleted; `meta` for pagination. |
 | `GET`    | `/api/transactions/:id` | `admin`, `analyst`, `viewer` | Single transaction (not soft-deleted).                                                                                                      |
-| `POST`   | `/api/transactions`     | `admin`                      | Create; **`createdBy`** set from JWT, not from the request body.                                                                              |
+| `POST`   | `/api/transactions`     | `admin`                      | Create; `**createdBy**` set from JWT, not from the request body.                                                                            |
 | `PATCH`  | `/api/transactions/:id` | `admin`                      | Partial update; empty body → `400` “No fields to update”.                                                                                   |
 | `DELETE` | `/api/transactions/:id` | `admin`                      | Soft delete (`isDeleted`); subsequent get/list omit row.                                                                                    |
 
@@ -134,7 +128,7 @@ Base path: **`/api`**. Unless noted, JSON bodies require **`Content-Type: applic
 | Method | Path                     | Roles                        | Description                                                         |
 | ------ | ------------------------ | ---------------------------- | ------------------------------------------------------------------- |
 | `GET`  | `/api/dashboard/summary` | `admin`, `analyst`           | Total income/expenses, net balance, category breakdown.             |
-| `GET`  | `/api/dashboard/trends`  | `admin`, `analyst`           | Time series: query **`granularity=month`** (default) or **`week`**. |
+| `GET`  | `/api/dashboard/trends`  | `admin`, `analyst`           | Time series: query `**granularity=month**` (default) or `**week**`. |
 | `GET`  | `/api/dashboard/recent`  | `admin`, `analyst`, `viewer` | Last 5 non-deleted transactions, newest first.                      |
 
 
@@ -156,7 +150,7 @@ Base path: **`/api`**. Unless noted, JSON bodies require **`Content-Type: applic
 | Piece      | Suggested host                                                                                                                                                                                   |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | PostgreSQL | [Neon](https://neon.tech) (or any Postgres)                                                                                                                                                      |
-| API        | [Render](https://render.com) Web Service — **Root directory** `server/`, **Build** `npm install`, **Start** `node src/app.js`, env: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `CLIENT_URL`     |
+| API        | [Render](https://render.com) Web Service — **Root directory** `server/`, **Build** `npm install`, **Start** `node src/app.js`, env: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `CLIENT_URL` |
 
 
 **Render free tier:** instances **sleep** when idle; the **first request after sleep** can be slow — expected, not a broken API.
